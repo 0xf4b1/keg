@@ -161,12 +161,19 @@ class App:
 		encoding_file = build.get_encoding()
 		archive_group = build.get_archive_group()
 
+		# One pass over the merged index instead of get_archive_by_key(), which
+		# re-parses every archive index for every file. Items are sorted by key
+		# then archive id, so setdefault keeps the same archive it would pick.
+		archive_of = {}
+		for item_key, _, archive_id, _ in archive_group.merged_index.items:
+			archive_of.setdefault(item_key, archive_group.archive_keys[archive_id])
+
 		files = set()
 		for filename, key, size in entries:
 			encoding_key = encoding_file.find_by_content_key(key)
 
-			if archive_group.has_file(encoding_key):
-				encoding_key = archive_group.get_archive_by_key(encoding_key)
+			if encoding_key in archive_of:
+				encoding_key = archive_of[encoding_key]
 
 			files.add(encoding_key)
 
